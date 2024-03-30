@@ -3,6 +3,8 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
+import router from "./src/router/routes";
 
 const server: Express = express();
 
@@ -19,9 +21,7 @@ server.use(express.urlencoded({ extended: true }));
 server.use(express.static(path.join(__dirname, 'public')));
 
 // routes API 
-server.use("/", (req: Request, res: Response) => {
-  res.json({ pong: true });
-});
+server.use(router);
 
 // Start the server
 const PORT: number = parseInt(process.env.PORT || '3000');
