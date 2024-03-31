@@ -5,7 +5,7 @@ import { NotaType } from "../models/notaType";
 
 const notaDir = path.join(__dirname, '../../arquivos/Notas');
 const nota = "./arquivos/Notas";
-const notas: NotaType[] = [];
+let notas: NotaType[] = [];
 
 function generateNotes(){
   fs.readdirSync(nota).forEach((fileName: string) => {
@@ -32,13 +32,23 @@ function generateNotes(){
 }
 
 const notaController = {
-  getAll: async (req: Request, res: Response) => {
+  getAllOrByPedidoId: async (req: Request, res: Response) => {
+    let { id } = req.query;
+    notas = [];
     generateNotes();
+
+    if (typeof id !== 'string' || id === undefined) {
+      res.json(
+        notas
+      );
+      return;
+    }
+
+    let notesByPedidoId = notas.filter((item: NotaType) => item.id_pedido.toString() == id);
     res.json(
-      notas
-   );
+      notesByPedidoId
+    );
   }
-  
 };
 
 export default notaController;
