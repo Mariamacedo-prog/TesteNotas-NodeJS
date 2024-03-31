@@ -1,32 +1,45 @@
 import { Request, Response } from "express";
 import fs from 'fs';
 import path from 'path'; 
-import { NotaType } from "../models/notaType";
-
-const notaDir = path.join(__dirname, '../../arquivos/Notas');
+import { NotaItemType, NotaType } from "../models/notaType";
+import {generatePedidos} from "./pedidoController";
 const nota = "./arquivos/Notas";
-let notas: NotaType[] = [];
+export let notas: NotaType[] = [];
 
-function generateNotes(){
+export function generateNotes(){
   fs.readdirSync(nota).forEach((fileName: string) => {
     if (path.extname(fileName) === '.txt') {
       const filePath = path.join(nota, fileName);
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const lines = fileContent.split('\n');
+      let notaByFile: NotaType = { id: parseInt(fileName.replace(/[^\d]/g, '')), nota: [] };
 
       lines.forEach((line) => {
         const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero');
         if(sanitizedLine.trim() !== ''){
           try {
-            const notaCada: NotaType = JSON.parse(sanitizedLine);
-            notas.push(notaCada);
-            console.log(notaCada);
+            const notaCada: NotaItemType = JSON.parse(sanitizedLine);
+
+            // Lançar exceção: Caso seja verificado que algum valor da Nota não corresponda ao tipo descrito;
+            if (
+              typeof notaCada.id_pedido != 'number' ||
+              typeof notaCada.numero_item != 'number' ||
+              typeof notaCada.quantidade_produto != 'number'
+            ) {
+              throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
+            }
+  
+            notaByFile.nota.push(notaCada);
           } catch (error: any) {
-            console.error(error);
-            console.error(`Erro ao analisar linha do arquivo ${fileName}: ${error}`);
+            throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
           }
         }
       });
+
+      generatePedidos();
+
+
+      notas.push(notaByFile);
     }
   });
 }
@@ -44,10 +57,10 @@ const notaController = {
       return;
     }
 
-    let notesByPedidoId = notas.filter((item: NotaType) => item.id_pedido.toString() == id);
-    res.json(
-      notesByPedidoId
-    );
+    // let notesByPedidoId = notas.filter((item: NotaType) => item.id_pedido.toString() == id);
+    // res.json(
+    //   notesByPedidoId
+    // );
   }
 };
 
