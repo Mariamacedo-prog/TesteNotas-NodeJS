@@ -1,6 +1,6 @@
 export interface PedidoType {
-  número_item: number; 
-  código_produto: string;
+  numero_item: number; 
+  codigo_produto: string;
   quantidade_produto: number; 
-  valor_unitário_produto: string;
+  valor_unitario_produto: string;
 }
