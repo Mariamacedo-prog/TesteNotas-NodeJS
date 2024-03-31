@@ -4,7 +4,7 @@ import path from 'path';
 import { PedidoItemType, PedidoType } from "../models/pedidoType";
 
 const pedido = "./arquivos/Pedidos";
-export let pedidos: PedidoType[] = [];
+let pedidos: PedidoType[] = [];
 
 function hasDuplicateNumeroItem(array: PedidoType) {
   return array.pedido.some((item, index) => array.pedido.findIndex(elem => elem.numero_item === item.numero_item) !== index);
@@ -21,7 +21,7 @@ function hasMissingNumeroItem(array: PedidoType) {
   return false; 
 }
 
-export function generatePedidos(){
+function generatePedidos(){
   fs.readdirSync(pedido).forEach((fileName: string) => {
     if (path.extname(fileName) === '.txt') {
       const filePath = path.join(pedido, fileName);
@@ -67,6 +67,13 @@ export function generatePedidos(){
       pedidos.push(pedidoByFile);
     }
   });
+}
+
+
+export function gePedidosArray(){
+  generatePedidos();
+
+  return pedidos;
 }
 
 const pedidoController = {

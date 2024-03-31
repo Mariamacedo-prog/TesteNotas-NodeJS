@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import fs from 'fs';
 import path from 'path'; 
 import { NotaItemType, NotaType } from "../models/notaType";
-import {generatePedidos} from "./pedidoController";
+import { gePedidosArray } from "./pedidoController";
+import { PedidoItemType, PedidoType } from "../models/pedidoType";
 const nota = "./arquivos/Notas";
 export let notas: NotaType[] = [];
 
@@ -28,16 +29,34 @@ export function generateNotes(){
             ) {
               throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
             }
-  
+
+            // Lançar exceção: Caso id_pedido não exista;
+            let pedidosList: PedidoType[] = gePedidosArray();
+            let pedidosById = pedidosList.find(item => item.id == notaCada.id_pedido)
+            console.log(pedidosById);
+            if(!pedidosById) {
+              throw new Error(`id_pedido ${notaCada.id_pedido} no arquivo ${fileName} inexistente;`);
+            }
+
+            // Lançar exceção: Caso numero_item não exista;
+            let allPedidoItem: PedidoItemType[] = [];
+            for(let item of pedidosList){
+              allPedidoItem = allPedidoItem.concat(item.pedido);
+            }
+
+            let pedidosByNumeroItem = allPedidoItem.find(item => item.numero_item == notaCada.numero_item);
+            console.log(pedidosByNumeroItem);
+            if(!pedidosByNumeroItem) {
+              throw new Error(`numero_item ${notaCada.numero_item} no arquivo ${fileName} inexistente;`);
+            }
+
+            
             notaByFile.nota.push(notaCada);
           } catch (error: any) {
             throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
           }
         }
       });
-
-      generatePedidos();
-
 
       notas.push(notaByFile);
     }
