@@ -1,0 +1,28 @@
+Pedido ID: 5
+Valor total do pedido: R$ 2.391,00
+Saldo do valor: R$ 450,00
+Itens pendentes:
+- Número do item: 4
+  Quantidade pendente: 9
+  Saldo pendente: R$ 405,00
+- Número do item: 1
+  Quantidade pendente: 3
+  Saldo pendente: R$ 30,00
+- Número do item: 6
+  Quantidade pendente: 1
+  Saldo pendente: R$ 15,90
+
+Pedido ID: 3
+Valor total do pedido: R$ 2.659,00
+Saldo do valor: R$ 413,00
+Itens pendentes:
+- Número do item: 2
+  Quantidade pendente: 4
+  Saldo pendente: R$ 68,00
+- Número do item: 3
+  Quantidade pendente: 5
+  Saldo pendente: R$ 75,00
+- Número do item: 1
+  Quantidade pendente: 27
+  Saldo pendente: R$ 270,00
+

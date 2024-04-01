@@ -2,6 +2,7 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import path from 'path';
+import router from "./src/router/routes";
 
 const server: Express = express();
 
@@ -17,12 +18,11 @@ server.use(express.urlencoded({ extended: true }));
 // Static files
 server.use(express.static(path.join(__dirname, 'public')));
 
-// routes API 
-server.use("/", (req: Request, res: Response) => {
-  res.json({ pong: true });
-});
 
-// Start the server
+
+// routes API 
+server.use(router);
+
 const PORT: number = parseInt(process.env.PORT || '3000');
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
