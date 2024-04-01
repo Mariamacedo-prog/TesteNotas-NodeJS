@@ -1,0 +1,32 @@
+Pedido: 5
+Valor total do pedido: 2391
+Saldo do valor: 555
+Itens Pendentes:
+Pedido: 4
+Valor total do pedido: 6015
+Saldo do valor: 0
+Itens Pendentes:
+Pedido: 3
+Valor total do pedido: 2659
+Saldo do valor: 413
+Itens Pendentes:
+Pedido: 2
+Valor total do pedido: 755
+Saldo do valor: 500
+Itens Pendentes:
+Número do item: 2, Saldo da quantidade: 25
+
+
+Número do item: 3, Saldo da quantidade: 5
+Número do item: 2, Saldo da quantidade: 4
+Número do item: 1, Saldo da quantidade: 27
+
+
+
+
+Número do item: 6, Saldo da quantidade: 1
+Número do item: 4, Saldo da quantidade: 9
+Número do item: 2, Saldo da quantidade: 15
+Número do item: 1, Saldo da quantidade: 3
+
+

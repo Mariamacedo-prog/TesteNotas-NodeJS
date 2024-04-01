@@ -1,90 +1,83 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path'; 
-import { PedidoItemType, PedidoType } from "../models/pedidoType";
+import { PedidoItemType, PedidoType } from '../models/pedidoType';
 
-const pedido = "./arquivos/Pedidos";
+const PEDIDO_DIR = './arquivos/Pedidos';
 let pedidos: PedidoType[] = [];
 
-function hasDuplicateNumeroItem(array: PedidoType) {
-  return array.pedido.some((item, index) => array.pedido.findIndex(elem => elem.numero_item === item.numero_item) !== index);
+function hasDuplicateNumeroItem(array: PedidoItemType[]): boolean {
+  const uniqueItems = new Set<number>();
+  for (const item of array) {
+    if (uniqueItems.has(item.numero_item)) {
+      return true;
+    }
+    uniqueItems.add(item.numero_item);
+  }
+  return false;
 }
 
-function hasMissingNumeroItem(array: PedidoType) {
-  const maxNumero = Math.max(...array.pedido.map(item => item.numero_item));
-
+function hasMissingNumeroItem(array: PedidoItemType[]): boolean {
+  const maxNumero = Math.max(...array.map(item => item.numero_item));
   for (let i = 1; i <= maxNumero; i++) {
-    if (!array.pedido.some(item => item.numero_item === i)) {
-        return true; 
+    if (!array.some(item => item.numero_item === i)) {
+      return true; 
     }
   }
   return false; 
 }
 
-function generatePedidos(){
-  fs.readdirSync(pedido).forEach((fileName: string) => {
-    if (path.extname(fileName) === '.txt') {
-      const filePath = path.join(pedido, fileName);
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const lines = fileContent.split('\n');
-      let pedidoByFile: PedidoType = { id: parseInt(fileName.replace(/[^\d]/g, '')), pedido: [] };
-    
+function parsePedidoFile(fileName: string): PedidoType {
+  const filePath = path.join(PEDIDO_DIR, fileName);
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  const lines = fileContent.split('\n');
+  const pedido: PedidoType = { id: parseInt(fileName.replace(/[^\d]/g, '')), pedido: [] };
 
-      lines.forEach((line) => {
-        const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero').replace('código', 'codigo').replace('unitário', 'unitario');
-        if(sanitizedLine.trim() !== ''){
-          try {
-            let pedidoCada: PedidoItemType = JSON.parse(sanitizedLine);
-
-            //Lançar exceção: Caso seja verificado que algum valor do Pedido não corresponda ao tipo descrito;
-            if ( 
-              typeof pedidoCada.numero_item != 'number' ||
-              typeof pedidoCada.quantidade_produto != 'number' ||
-              typeof pedidoCada.codigo_produto != 'string' || 
-              typeof pedidoCada.valor_unitario_produto != 'string'
-            ) {
-              throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
-            }
-            pedidoByFile.pedido.push(pedidoCada);
-          } catch (error: any) {
-            throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
-          }
+  lines.forEach((line) => {
+    const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero').replace('código', 'codigo').replace('unitário', 'unitario');
+    if (sanitizedLine.trim() !== '') {
+      try {
+        const pedidoCada: PedidoItemType = JSON.parse(sanitizedLine);
+        if (typeof pedidoCada.numero_item !== 'number' ||
+            typeof pedidoCada.quantidade_produto !== 'number' ||
+            typeof pedidoCada.codigo_produto !== 'string' || 
+            typeof pedidoCada.valor_unitario_produto !== 'string') {
+          throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
         }
-      });
-
-
-
-      // Lançar exceção: Caso haja repetição de algum numero_item de um mesmo pedido;
-      if(hasDuplicateNumeroItem(pedidoByFile)){
-        throw new Error(`O numero_item de um mesmo pedido no arquivo ${fileName}, esta se repetindo`);
-      };
-
-      // Lançar exceção: Caso falte algum numero_item (deve haver todos os números consecutivos de 1 ao maior número de item daquele pedido);
-      if(hasMissingNumeroItem(pedidoByFile)){
-        throw new Error(`Falta algum numero_item no arquivo ${fileName}`);
-      };
-
-      pedidos.push(pedidoByFile);
+        pedido.pedido.push(pedidoCada);
+      } catch (error: any) {
+        throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
+      }
     }
   });
+
+  if (hasDuplicateNumeroItem(pedido.pedido)) {
+    throw new Error(`O numero_item de um mesmo pedido no arquivo ${fileName}, esta se repetindo`);
+  }
+
+  if (hasMissingNumeroItem(pedido.pedido)) {
+    throw new Error(`Falta algum numero_item no arquivo ${fileName}`);
+  }
+
+  return pedido;
 }
 
+function generatePedidos(): void {
+  pedidos = fs.readdirSync(PEDIDO_DIR)
+    .filter(fileName => path.extname(fileName) === '.txt')
+    .map(fileName => parsePedidoFile(fileName));
+}
 
-export function gePedidosArray(){
+export function gePedidosArray(): PedidoType[] {
   generatePedidos();
-
   return pedidos;
 }
 
 const pedidoController = {
-  getAll: async (req: Request, res: Response) => {
-    pedidos = [];
+  getAll: async (req: Request, res: Response): Promise<void> => {
     generatePedidos();
-
-      res.json(
-        pedidos
-      );
+    res.json(pedidos);
   }
-}
+};
 
 export default pedidoController;
