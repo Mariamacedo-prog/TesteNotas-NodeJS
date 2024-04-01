@@ -9,7 +9,7 @@ router.get("/ping", (req: Request, res: Response) => {
 });
 
 //Notas Routes
-router.get("/notas", notaController.getAllOrByPedidoId);
+router.get("/notas", notaController.getAll);
 
 router.get("/pedidos", pedidoController.getAll);
 export default router;

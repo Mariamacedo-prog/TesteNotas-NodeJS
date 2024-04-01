@@ -3,43 +3,26 @@ import fs from 'fs';
 import path from 'path'; 
 import { NotaItemType, NotaType } from "../models/notaType";
 import { gePedidosArray } from "./pedidoController";
-import { PedidoItemType, PedidoType } from "../models/pedidoType";
-const nota = "./arquivos/Notas";
-export let notas: NotaType[] = [];
+import { PedidoType } from "../models/pedidoType";
 
+const NOTA_DIR = "./arquivos/Notas";
+const FILE_EXTENSION = ".txt";
 
-function hasNumeroItem(array: PedidoType[], nota: NotaItemType) {
-  let allPedidoItem: PedidoItemType[] = [];
-  for(let item of array){
-    allPedidoItem = allPedidoItem.concat(item.pedido);
-  }
-  return allPedidoItem.find(item => item.numero_item == nota.numero_item);
+let notas: NotaType[] = [];
+
+function hasNumeroItem(array: PedidoType[], nota: NotaItemType): boolean {
+  return array.some(item => item.id === nota.id_pedido);
 }
 
-
-function hasPedidoId(array: PedidoType[], nota: NotaItemType) {
-  return array.find(item => item.id == nota.id_pedido)
+function hasPedidoId(array: PedidoType[], nota: NotaItemType): boolean {
+  return array.some(item => item.pedido.some(pedido => pedido.numero_item === nota.numero_item));
 }
 
-function hasQuantidadeItem(array: PedidoType[]) {
-  let allNotas:NotaItemType[] = [];
-  for(let item of notas){
-    for(let i of item.nota){
-      let foundIndex = allNotas.findIndex((item) => item.id_pedido == i.id_pedido && item.numero_item == i.numero_item);
-
-      if (foundIndex !== -1) {
-        const notaCopy = { ...allNotas[foundIndex] };
-        notaCopy.quantidade_produto += i.quantidade_produto;
-        allNotas[foundIndex] = notaCopy;
-      } else {
-        allNotas.push({ ...i }); 
-      }
-
-    }
-  }
+function hasQuantidadeItem(pedidosList: PedidoType[]): void {
+  const allNotas: NotaItemType[] = notas.flatMap(nota => nota.nota);
 
   for (const itemNota of allNotas) {
-    const pedidoCorrespondente = array.find(pedido => pedido.id === itemNota.id_pedido);
+    const pedidoCorrespondente = pedidosList.find(pedido => pedido.id === itemNota.id_pedido);
 
     if (pedidoCorrespondente) {
       const itemPedido = pedidoCorrespondente.pedido.find(item => item.numero_item === itemNota.numero_item);
@@ -51,65 +34,73 @@ function hasQuantidadeItem(array: PedidoType[]) {
   }
 }
 
-export async function generateNotes(){
-  const files = fs.readdirSync(nota);
-  let pedidosList: PedidoType[] = gePedidosArray();
+async function generateNotes(): Promise<void> {
+  const files = fs.readdirSync(NOTA_DIR);
 
-  for (const fileName of files) {
-    if (path.extname(fileName) === '.txt') {
-      const filePath = path.join(nota, fileName);
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
-      const lines = fileContent.split('\n');
-      let notaByFile: NotaType = { id: parseInt(fileName.replace(/[^\d]/g, '')), nota: [] };
+  try {
+    const pedidosList = gePedidosArray();
 
-      for (const line of lines) {
-        const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero');
-        if(sanitizedLine.trim() !== ''){
-          try {
+    for (const fileName of files) {
+      if (path.extname(fileName) === FILE_EXTENSION) {
+        const filePath = path.join(NOTA_DIR, fileName);
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const lines = fileContent.split('\n');
+        const notaByFile: NotaType = { id: parseInt(fileName.replace(/[^\d]/g, '')), nota: [] };
+
+        for (const line of lines) {
+          const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero');
+          if(sanitizedLine.trim() !== ''){
             const notaCada: NotaItemType = JSON.parse(sanitizedLine);
-            // Lançar exceção: Caso seja verificado que algum valor da Nota não corresponda ao tipo descrito;
-            if (
-              typeof notaCada.id_pedido != 'number' ||
-              typeof notaCada.numero_item != 'number' ||
-              typeof notaCada.quantidade_produto != 'number'
-            ) {
+
+            if (typeof notaCada.id_pedido !== 'number' ||
+                typeof notaCada.numero_item !== 'number' ||
+                typeof notaCada.quantidade_produto !== 'number') {
               throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
             }
-              // Lançar exceção: Caso id_pedido não exista;
-            if(!hasPedidoId(pedidosList, notaCada)) {
+            
+            if (!hasPedidoId(pedidosList, notaCada)) {
               throw new Error(`id_pedido ${notaCada.id_pedido} no arquivo ${fileName} inexistente;`);
             }
-            // Lançar exceção: Caso numero_item não exista;
-            if(!hasNumeroItem(pedidosList, notaCada)) {
+
+            if (!hasNumeroItem(pedidosList, notaCada)) {
               throw new Error(`numero_item ${notaCada.numero_item} no arquivo ${fileName} inexistente;`);
             }
 
             notaByFile.nota.push(notaCada);
-          } catch (error: any) {
-            throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
+          }
+        }
+
+        notas.push(notaByFile);
+      }
+    }
+
+    hasQuantidadeItem(pedidosList);
+  } catch (error) {
+    throw new Error(`Erro durante a geração de notas: ${error}`);
+  }
+}
+
+const notaController = {
+  getAll: async (req: Request, res: Response) => {
+    const { id } = req.query;
+    notas = [];
+    await generateNotes();
+
+    if (typeof id !== 'string' || id === undefined) {
+      res.json(notas);
+    }else{
+      let allNotas:NotaType[]  = [...notas]
+      
+      let notasByPedidoId:NotaItemType[] = []
+      for(let item of allNotas){
+        for(let n of item.nota){
+          if(n.id_pedido == parseInt(id)){
+            notasByPedidoId.push(n);
           }
         }
       }
 
-      notas.push(notaByFile);
-    }
-  }
-
-  // Lançar exceção: Caso a soma das quantidades informadas para um item ultrapassar a quantidade do item do pedido.
-  hasQuantidadeItem(pedidosList);
-}
-
-const notaController = {
-  getAllOrByPedidoId: async (req: Request, res: Response) => {
-    let { id } = req.query;
-    notas = [];
-    generateNotes();
-
-    if (typeof id !== 'string' || id === undefined) {
-      res.json(
-        notas
-      );
-      return;
+      res.json(notasByPedidoId);
     }
   }
 };
