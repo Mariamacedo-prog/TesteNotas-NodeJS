@@ -1,6 +1,7 @@
 
 export interface ItemPendenteType{
   numero_item: number; 
+  quantidade_pendente: number; 
   saldo_pendente: string; 
 }
 export interface PedidoPendenteType{

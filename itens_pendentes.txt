@@ -1,32 +1,28 @@
-Pedido: 5
-Valor total do pedido: 2391
-Saldo do valor: 555
-Itens Pendentes:
-Pedido: 4
-Valor total do pedido: 6015
-Saldo do valor: 0
-Itens Pendentes:
-Pedido: 3
-Valor total do pedido: 2659
-Saldo do valor: 413
-Itens Pendentes:
-Pedido: 2
-Valor total do pedido: 755
-Saldo do valor: 500
-Itens Pendentes:
-Número do item: 2, Saldo da quantidade: 25
+Pedido ID: 5
+Valor total do pedido: R$ 2.391,00
+Saldo do valor: R$ 450,00
+Itens pendentes:
+- Número do item: 4
+  Quantidade pendente: 9
+  Saldo pendente: R$ 405,00
+- Número do item: 1
+  Quantidade pendente: 3
+  Saldo pendente: R$ 30,00
+- Número do item: 6
+  Quantidade pendente: 1
+  Saldo pendente: R$ 15,90
 
-
-Número do item: 3, Saldo da quantidade: 5
-Número do item: 2, Saldo da quantidade: 4
-Número do item: 1, Saldo da quantidade: 27
-
-
-
-
-Número do item: 6, Saldo da quantidade: 1
-Número do item: 4, Saldo da quantidade: 9
-Número do item: 2, Saldo da quantidade: 15
-Número do item: 1, Saldo da quantidade: 3
-
+Pedido ID: 3
+Valor total do pedido: R$ 2.659,00
+Saldo do valor: R$ 413,00
+Itens pendentes:
+- Número do item: 2
+  Quantidade pendente: 4
+  Saldo pendente: R$ 68,00
+- Número do item: 3
+  Quantidade pendente: 5
+  Saldo pendente: R$ 75,00
+- Número do item: 1
+  Quantidade pendente: 27
+  Saldo pendente: R$ 270,00
 

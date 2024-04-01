@@ -116,38 +116,24 @@ function itemAtendido(itemPedido: PedidoItemType, quantidadeTotal: number): bool
   return itemPedido.quantidade_produto <= quantidadeTotal;
 }
 // Função para gerar a listagem de itens pendentes
-function gerarItensPendentes(notas: NotaType[], pedidos: PedidoType[]): string {
-  let itensPendentes = '';
+function gerarItensPendentes(pedidosPendentes: PedidoPendenteType[]): string {
+  let dados = '';
 
-  for (const pedido of pedidos) {
-      let valorTotalPedido = calcularValorTotalPedido(pedido);
-      let saldoValor = 0;
+  for(let pedido of pedidosPendentes){
+    dados += `Pedido ID: ${pedido.id}\n`;
+    dados += `Valor total do pedido: ${pedido.valor_total_pedido}\n`;
+    dados += `Saldo do valor: ${pedido.saldo_valor}\n`;
 
-      for (const itemPedido of pedido.pedido) {
-          let quantidadeTotal = 0;
-
-          for (const nota of notas) {
-              const notaItem = nota.nota.find(notaItem => notaItem.id_pedido === pedido.id && notaItem.numero_item === itemPedido.numero_item);
-              if (notaItem) {
-                  quantidadeTotal += notaItem.quantidade_produto;
-              }
-          }
-
-          if (!itemAtendido(itemPedido, quantidadeTotal)) {
-              const saldoQuantidade = itemPedido.quantidade_produto - quantidadeTotal;
-              const valorItem = calcularValorTotalItem(itemPedido);
-              saldoValor += valorItem * (saldoQuantidade / itemPedido.quantidade_produto);
-
-              itensPendentes += `Número do item: ${itemPedido.numero_item}, Saldo da quantidade: ${saldoQuantidade}\n`;
-          }
-      }
-
-      if (itensPendentes !== '') {
-          itensPendentes = `Pedido: ${pedido.id}\nValor total do pedido: ${valorTotalPedido}\nSaldo do valor: ${saldoValor}\nItens Pendentes:\n${itensPendentes}\n\n`;
-      }
+    dados += `Itens pendentes:\n`;
+    pedido.itens_pendentes.forEach(item => {
+        dados += `- Número do item: ${item.numero_item}\n`;
+        dados += `  Quantidade pendente: ${item.quantidade_pendente}\n`;
+        dados += `  Saldo pendente: ${item.saldo_pendente}\n`;
+    });
+    dados += '\n';
   }
 
-  return itensPendentes;
+  return dados;
 }
 
 // Função para gravar a listagem de itens pendentes em um arquivo
@@ -226,14 +212,15 @@ const notaController = {
             newPedidoPendente.valor_total_pedido = totalValores.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
           }
 
-          
+
          
 
-          let valorString = (itemPedido.quantidade_produto - itemNota.quantidade_produto) * parseFloat(itemPedido.valor_unitario_produto.replace(",", "."));
-
+          let saldoPendenteItem = (itemPedido.quantidade_produto - itemNota.quantidade_produto) * parseFloat(itemPedido.valor_unitario_produto.replace(",", "."))
+          
           newPedidoPendente.itens_pendentes.push({
             numero_item: itemNota.numero_item, 
-            saldo_pendente: valorString.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+            quantidade_pendente: itemPedido.quantidade_produto - itemNota.quantidade_produto,
+            saldo_pendente: saldoPendenteItem.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
           })
 
           let foundIndex = pedidosPendentes.findIndex((pedido) => pedido.id === newPedidoPendente.id);
@@ -243,6 +230,18 @@ const notaController = {
             pedidosPendentes.push(newPedidoPendente)
           }
         }
+
+        let foundPedidoIndex = pedidosPendentes.findIndex((pedido) => pedido.id === newPedidoPendente.id);
+        if (foundPedidoIndex !== -1) {
+          newPedidoPendente = pedidosPendentes[foundPedidoIndex];
+
+          let totalSaldoPendente = pedidosPendentes[foundPedidoIndex].itens_pendentes.reduce((total, item) => {
+            let valorNumerico = parseFloat(item.saldo_pendente.replace(/[^\d.,]/g, ''));
+            return total + valorNumerico;
+          }, 0);
+          newPedidoPendente.saldo_valor = totalSaldoPendente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          pedidosPendentes[foundPedidoIndex] = newPedidoPendente;
+        } 
       }
     }
 
@@ -250,7 +249,7 @@ const notaController = {
     res.json({itens_pendentes: pedidosPendentes});
 
 
-    const listagemItensPendentes = gerarItensPendentes(notas, pedidos);
+    const listagemItensPendentes = gerarItensPendentes(pedidosPendentes);
     gravarListagemItensPendentes(listagemItensPendentes, 'itens_pendentes.txt');
   }
 };
