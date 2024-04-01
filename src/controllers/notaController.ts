@@ -37,10 +37,18 @@ function hasQuantidadeItem(array: PedidoType[]) {
 
     }
   }
-  console.log(allNotas)
 
+  for (const itemNota of allNotas) {
+    const pedidoCorrespondente = array.find(pedido => pedido.id === itemNota.id_pedido);
 
-  return false
+    if (pedidoCorrespondente) {
+      const itemPedido = pedidoCorrespondente.pedido.find(item => item.numero_item === itemNota.numero_item);
+        
+      if (itemPedido && itemNota.quantidade_produto > itemPedido.quantidade_produto) {
+        throw new Error(`Item: ${itemNota.numero_item} possui quantidade de ${itemNota.quantidade_produto}, porém o máximo permitido é de ${itemPedido.quantidade_produto}`);
+      }
+    }
+  }
 }
 
 export async function generateNotes(){
@@ -88,9 +96,7 @@ export async function generateNotes(){
   }
 
   // Lançar exceção: Caso a soma das quantidades informadas para um item ultrapassar a quantidade do item do pedido.
-  if(!hasQuantidadeItem(pedidosList)) {
-  
-  }
+  hasQuantidadeItem(pedidosList);
 }
 
 const notaController = {
@@ -105,11 +111,6 @@ const notaController = {
       );
       return;
     }
-
-    // let notesByPedidoId = notas.filter((item: NotaType) => item.id_pedido.toString() == id);
-    // res.json(
-    //   notesByPedidoId
-    // );
   }
 };
 
