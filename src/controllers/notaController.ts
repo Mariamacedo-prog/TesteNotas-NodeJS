@@ -7,20 +7,58 @@ import { PedidoItemType, PedidoType } from "../models/pedidoType";
 const nota = "./arquivos/Notas";
 export let notas: NotaType[] = [];
 
-export function generateNotes(){
-  fs.readdirSync(nota).forEach((fileName: string) => {
+
+function hasNumeroItem(array: PedidoType[], nota: NotaItemType) {
+  let allPedidoItem: PedidoItemType[] = [];
+  for(let item of array){
+    allPedidoItem = allPedidoItem.concat(item.pedido);
+  }
+  return allPedidoItem.find(item => item.numero_item == nota.numero_item);
+}
+
+
+function hasPedidoId(array: PedidoType[], nota: NotaItemType) {
+  return array.find(item => item.id == nota.id_pedido)
+}
+
+function hasQuantidadeItem(array: PedidoType[]) {
+  let allNotas:NotaItemType[] = [];
+  for(let item of notas){
+    for(let i of item.nota){
+      let foundIndex = allNotas.findIndex((item) => item.id_pedido == i.id_pedido && item.numero_item == i.numero_item);
+
+      if (foundIndex !== -1) {
+        const notaCopy = { ...allNotas[foundIndex] };
+        notaCopy.quantidade_produto += i.quantidade_produto;
+        allNotas[foundIndex] = notaCopy;
+      } else {
+        allNotas.push({ ...i }); 
+      }
+
+    }
+  }
+  console.log(allNotas)
+
+
+  return false
+}
+
+export async function generateNotes(){
+  const files = fs.readdirSync(nota);
+  let pedidosList: PedidoType[] = gePedidosArray();
+
+  for (const fileName of files) {
     if (path.extname(fileName) === '.txt') {
       const filePath = path.join(nota, fileName);
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const lines = fileContent.split('\n');
       let notaByFile: NotaType = { id: parseInt(fileName.replace(/[^\d]/g, '')), nota: [] };
 
-      lines.forEach((line) => {
+      for (const line of lines) {
         const sanitizedLine = line.trim().replace(/^\uFEFF/, '').replace('número', 'numero');
         if(sanitizedLine.trim() !== ''){
           try {
             const notaCada: NotaItemType = JSON.parse(sanitizedLine);
-
             // Lançar exceção: Caso seja verificado que algum valor da Nota não corresponda ao tipo descrito;
             if (
               typeof notaCada.id_pedido != 'number' ||
@@ -29,38 +67,30 @@ export function generateNotes(){
             ) {
               throw new Error(`Tipo de dado incorreto na linha do arquivo ${fileName}`);
             }
-
-            // Lançar exceção: Caso id_pedido não exista;
-            let pedidosList: PedidoType[] = gePedidosArray();
-            let pedidosById = pedidosList.find(item => item.id == notaCada.id_pedido)
-            console.log(pedidosById);
-            if(!pedidosById) {
+              // Lançar exceção: Caso id_pedido não exista;
+            if(!hasPedidoId(pedidosList, notaCada)) {
               throw new Error(`id_pedido ${notaCada.id_pedido} no arquivo ${fileName} inexistente;`);
             }
-
             // Lançar exceção: Caso numero_item não exista;
-            let allPedidoItem: PedidoItemType[] = [];
-            for(let item of pedidosList){
-              allPedidoItem = allPedidoItem.concat(item.pedido);
-            }
-
-            let pedidosByNumeroItem = allPedidoItem.find(item => item.numero_item == notaCada.numero_item);
-            console.log(pedidosByNumeroItem);
-            if(!pedidosByNumeroItem) {
+            if(!hasNumeroItem(pedidosList, notaCada)) {
               throw new Error(`numero_item ${notaCada.numero_item} no arquivo ${fileName} inexistente;`);
             }
 
-            
             notaByFile.nota.push(notaCada);
           } catch (error: any) {
             throw new Error(`Erro na linha do arquivo ${fileName}: ${error}`);
           }
         }
-      });
+      }
 
       notas.push(notaByFile);
     }
-  });
+  }
+
+  // Lançar exceção: Caso a soma das quantidades informadas para um item ultrapassar a quantidade do item do pedido.
+  if(!hasQuantidadeItem(pedidosList)) {
+  
+  }
 }
 
 const notaController = {
